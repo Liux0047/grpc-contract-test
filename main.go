@@ -23,6 +23,6 @@ func main() {
 			msg: "hello",
 		},
 	}
-	fmt.Println("type:", reflect.ValueOf(v).Elem().FieldByName("bar"))
+	fmt.Println("type:", reflect.ValueOf(v).Elem().FieldByName("bar").Type())
 
 }
