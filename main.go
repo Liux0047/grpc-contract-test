@@ -12,7 +12,8 @@ type Foo struct {
 }
 
 type Bar struct {
-	msg string
+	msg    string
+	weight float64
 }
 
 func main() {
@@ -20,9 +21,10 @@ func main() {
 		name: "my name",
 		age:  12,
 		bar: &Bar{
-			msg: "hello",
+			msg:    "hello",
+			weight: 12.3,
 		},
 	}
-	fmt.Println("type:", reflect.ValueOf(v).Elem().FieldByName("bar").Type())
+	fmt.Println("type:", reflect.ValueOf(v).Elem().FieldByName("bar").Elem().FieldByName("weight").Type())
 
 }

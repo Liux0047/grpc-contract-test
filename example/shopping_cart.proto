@@ -1,0 +1,23 @@
+syntax = "proto3"; 
+
+package shoppingcart;
+option go_package = "examples/shoppingcart";
+
+// ShoppingCart service definition.
+service ShoppingCart {
+    // Remote method that adds a new item to the shopping cart.
+    rpc AddItem(AddItemRequest) returns (AddItemResponse) {}
+}
+
+// Defines the message AddItemRequest and its fields.
+message AddItemRequest {
+    int32 item_id = 1;
+    string item_name = 2;
+    float price = 3; 
+}
+
+// Defines the message AddItemResponse and its fields.
+message AddItemResponse {
+    bool added = 1;
+    string error_msg = 2;
+}
