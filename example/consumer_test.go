@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"testing"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -27,7 +26,7 @@ type stubServer struct {
 }
 
 func (s *stubServer) AddItem(ctx context.Context, req *pb.AddItemRequest) (*pb.AddItemResponse, error) {
-	resp, err := s.lib.respond("ShoppingCart.AddItem", req)
+	resp, err := s.lib.respond("AddItem", req)
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +59,7 @@ func TestClientContract(t *testing.T) {
 	c := pb.NewShoppingCartClient(conn)
 
 	// Contact the server and print out its response.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	resp, err := c.AddItem(ctx, &pb.AddItemRequest{ItemId: 1})
+	resp, err := c.AddItem(context.Background(), &pb.AddItemRequest{ItemId: 1})
 	if err != nil {
 		log.Fatalf("could not add item: %v", err)
 	}
@@ -95,7 +92,7 @@ func (lib *gctlib) respond(method string, req proto.Message) (proto.Message, err
 func NewGctLib() *gctlib {
 	return &gctlib{
 		contracts: map[string][]*interaction{
-			"ShoppingCart.AddItem": {
+			"AddItem": {
 				&interaction{
 					req:  &pb.AddItemRequest{ItemId: 1},
 					resp: &pb.AddItemResponse{Added: true},
