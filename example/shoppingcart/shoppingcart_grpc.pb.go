@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ShoppingCartClient interface {
-	// Remote method that adds a new product to the shopping cart.
+	// Remote method that adds a new item to the shopping cart.
 	AddItem(ctx context.Context, in *AddItemRequest, opts ...grpc.CallOption) (*AddItemResponse, error)
 }
 
@@ -43,7 +43,7 @@ func (c *shoppingCartClient) AddItem(ctx context.Context, in *AddItemRequest, op
 // All implementations must embed UnimplementedShoppingCartServer
 // for forward compatibility
 type ShoppingCartServer interface {
-	// Remote method that adds a new product to the shopping cart.
+	// Remote method that adds a new item to the shopping cart.
 	AddItem(context.Context, *AddItemRequest) (*AddItemResponse, error)
 	mustEmbedUnimplementedShoppingCartServer()
 }
@@ -99,5 +99,5 @@ var ShoppingCart_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "shopping_cart.proto",
+	Metadata: "example/shoppingcart/shoppingcart.proto",
 }

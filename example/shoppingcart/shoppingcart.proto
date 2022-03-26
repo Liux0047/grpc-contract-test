@@ -1,7 +1,7 @@
 syntax = "proto3"; 
 
 package shoppingcart;
-option go_package = "examples/shoppingcart";
+option go_package = "github.com/liux0047/grpc-contract-test/example/shoppingcart";
 
 // ShoppingCart service definition.
 service ShoppingCart {
