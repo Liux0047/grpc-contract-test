@@ -8,6 +8,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/liux0047/grpc-contract-test/testlib"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
@@ -21,12 +22,12 @@ var (
 )
 
 type stubServer struct {
-	lib *gctlib
+	server *testlib.ServerStub
 	pb.UnimplementedShoppingCartServer
 }
 
 func (s *stubServer) AddItem(ctx context.Context, req *pb.AddItemRequest) (*pb.AddItemResponse, error) {
-	resp, err := s.lib.respond("AddItem", req)
+	resp, err := s.server.Respond("AddItem", req)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func TestClientContract(t *testing.T) {
 			log.Fatalf("failed to listen: %v", err)
 		}
 		s := grpc.NewServer()
-		pb.RegisterShoppingCartServer(s, &stubServer{lib: NewGctLib()})
+		pb.RegisterShoppingCartServer(s, &stubServer{server: testlib.NewServer("consumer_foo.textproto")})
 		log.Printf("server listening at %v", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
@@ -67,37 +68,5 @@ func TestClientContract(t *testing.T) {
 
 	if !proto.Equal(resp, &pb.AddItemResponse{Added: true}) {
 		t.Errorf("incorrect")
-	}
-}
-
-// contract test lib
-type gctlib struct {
-	contracts map[string][]*interaction
-}
-
-type interaction struct {
-	req  proto.Message
-	resp proto.Message
-}
-
-func (lib *gctlib) respond(method string, req proto.Message) (proto.Message, error) {
-	for _, interaction := range lib.contracts[method] {
-		if proto.Equal(req, interaction.req) {
-			return interaction.resp, nil
-		}
-	}
-	return nil, fmt.Errorf("no contract found for %q with request: %v", method, req)
-}
-
-func NewGctLib() *gctlib {
-	return &gctlib{
-		contracts: map[string][]*interaction{
-			"AddItem": {
-				&interaction{
-					req:  &pb.AddItemRequest{ItemId: 1},
-					resp: &pb.AddItemResponse{Added: true},
-				},
-			},
-		},
 	}
 }

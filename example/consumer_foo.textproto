@@ -1,0 +1,13 @@
+interactions: {
+    method: "AddItem"
+    request: {
+        [type.googleapis.com/shoppingcart.AddItemRequest]: {
+            item_id: 1
+        }
+    } 
+    response: {
+        [type.googleapis.com/shoppingcart.AddItemResponse]: {
+            added: true
+        }
+    }
+}

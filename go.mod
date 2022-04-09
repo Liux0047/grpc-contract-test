@@ -3,9 +3,12 @@ module github.com/Liux0047/grpc-contract-test
 go 1.17
 
 require (
+	github.com/google/go-cmp v0.5.5
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.28.0
 )
+
+require golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 
 require (
 	github.com/golang/protobuf v1.5.2 // indirect

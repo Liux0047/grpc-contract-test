@@ -1,4 +1,7 @@
 syntax = "proto3"; 
+
+package contract;
+option go_package = "github.com/liux0047/grpc-contract-test/contract";
 import "google/protobuf/any.proto";
 
 message Contract {
