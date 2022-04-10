@@ -8,7 +8,6 @@ import (
 	"net"
 	"testing"
 
-	"github.com/liux0047/grpc-contract-test/testlib"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
@@ -22,16 +21,7 @@ var (
 )
 
 type stubServer struct {
-	server *testlib.ServerStub
 	pb.UnimplementedShoppingCartServer
-}
-
-func (s *stubServer) AddItem(ctx context.Context, req *pb.AddItemRequest) (*pb.AddItemResponse, error) {
-	resp, err := s.server.Respond("AddItem", req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.AddItemResponse), nil
 }
 
 func TestClientContract(t *testing.T) {
@@ -43,7 +33,7 @@ func TestClientContract(t *testing.T) {
 			log.Fatalf("failed to listen: %v", err)
 		}
 		s := grpc.NewServer()
-		pb.RegisterShoppingCartServer(s, &stubServer{server: testlib.NewServer("consumer_foo.textproto")})
+		pb.RegisterShoppingCartServer(s, &stubServer{})
 		log.Printf("server listening at %v", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
