@@ -11,12 +11,23 @@ message Contract {
 }
 
 message Interaction {
-    string method = 1;
-    google.protobuf.Any  request = 2;
-    google.protobuf.Any  response = 3;
-    bool wantError = 4;
-    repeated IntRule intRules = 5;
-    repeated StringRule stringRules = 6;
+    string name = 1;
+    string method = 2;
+    google.protobuf.Any  request = 3;
+    google.protobuf.Any  response = 4;
+    bool wantError = 5;
+    CompositeRules rules = 6;
+}
+
+message CompositeRules {
+    enum Operator {
+        AND = 0;
+        OR = 1;
+    }
+    Operator operator = 1;
+    repeated IntRule intRules = 2;
+    repeated StringRule stringRules = 3;
+    repeated CompositeRules nestedRules = 4;
 }
 
 message IntRule {

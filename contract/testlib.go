@@ -90,21 +90,63 @@ func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
 		t.Fatalf("reading contract failed: %v", err)
 	}
 	for _, interaction := range contract.Interactions {
-		res := tester.CallRpc(t, interaction)
+		t.Run(interaction.Name, func(t *testing.T) {
+			res := tester.CallRpc(t, interaction)
+			if err != nil && !interaction.WantError {
+				t.Fatalf("unexpected error in calling %v with %v: %v", interaction.Method, interaction.Request, err)
+			}
+			if !proto.Equal(res.GotResponse, res.WantResponse) {
+				t.Errorf("response not conforming to contract")
+			}
+			if interaction.Rules != nil {
+				ruleMet, err := checkRules(res.GotResponse, interaction.Rules)
+				if err != nil {
+					t.Fatalf("error in evaluating rules %v: %v", interaction.Rules, err)
+				}
+				if !ruleMet {
+					t.Errorf("rules are not met for %v", interaction.Rules)
+				}
+			}
+		})
 
-		if err != nil && !interaction.WantError {
-			t.Fatalf("unexpected error in calling %v with %v: %v", interaction.Method, interaction.Request, err)
+	}
+}
+
+func checkRules(response proto.Message, rules *CompositeRules) (bool, error) {
+	for _, rule := range rules.IntRules {
+		met, err := checkIntRule(response, rule)
+		if err != nil {
+			return false, err
 		}
-		if !proto.Equal(res.GotResponse, res.WantResponse) {
-			t.Errorf("response not conforming to contract")
-		}
-		for _, rule := range interaction.IntRules {
-			checkIntRule(res.GotResponse, rule)
-		}
-		for _, rule := range interaction.StringRules {
-			checkStringRule(res.GotResponse, rule)
+		if !met && rules.Operator == CompositeRules_AND {
+			return false, nil
+		} else if met && rules.Operator == CompositeRules_OR {
+			return true, nil
 		}
 	}
+	for _, rule := range rules.StringRules {
+		met, err := checkStringRule(response, rule)
+		if err != nil {
+			return false, err
+		}
+		if !met && rules.Operator == CompositeRules_AND {
+			return false, nil
+		} else if met && rules.Operator == CompositeRules_OR {
+			return true, nil
+		}
+	}
+	for _, rule := range rules.NestedRules {
+		met, err := checkRules(response, rule)
+		if err != nil {
+			return false, err
+		}
+		if !met && rules.Operator == CompositeRules_AND {
+			return false, nil
+		} else if met && rules.Operator == CompositeRules_OR {
+			return true, nil
+		}
+	}
+	return rules.Operator == CompositeRules_AND, nil
 }
 
 func startServer(t *testing.T, tester RpcTester, addr string) {
