@@ -14,8 +14,9 @@ message Interaction {
     string method = 1;
     google.protobuf.Any  request = 2;
     google.protobuf.Any  response = 3;
-    repeated IntCondition intConditions = 4;
-    repeated StringCondition stringConditions = 5;
+    bool wantError = 4;
+    repeated IntCondition intConditions = 5;
+    repeated StringCondition stringConditions = 6;
 }
 
 message IntCondition {

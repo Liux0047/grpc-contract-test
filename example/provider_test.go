@@ -5,26 +5,21 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"testing"
 
 	"github.com/liux0047/grpc-contract-test/contract"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/proto"
 
 	pb "github.com/liux0047/grpc-contract-test/example/shoppingcart"
 )
 
 var (
-	port = flag.Int("port", 50051, "The server port")
 	addr = flag.String("addr", "localhost:50051", "the address to connect to")
 )
 
 func TestProviderContract(t *testing.T) {
-	go func() {
-		startServer(t)
-	}()
+
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -33,28 +28,47 @@ func TestProviderContract(t *testing.T) {
 	defer conn.Close()
 	c := pb.NewShoppingCartClient(conn)
 
-	contract, err := contract.ReadConctract("fooshop.textproto")
-	if err != nil {
-		t.Fatalf("reading contract failed: %v", err)
+	pt := &ProviderTester{
+		client: c,
+		server: &ShoppingCartServer{},
 	}
-	for _, interaction := range contract.Interactions {
-		switch interaction.Method {
-		case "AddItem":
-			req := new(pb.AddItemRequest)
-			wantResp := new(pb.AddItemResponse)
-			interaction.Request.UnmarshalTo(req)
-			interaction.Response.UnmarshalTo(wantResp)
-			response, err := c.AddItem(context.Background(), req)
-			if err != nil {
-				t.Fatalf("not able to call AddItem with %v: %v", req, err)
-			}
-			if !proto.Equal(response, wantResp) {
-				t.Errorf("response not conforming to contract")
-			}
+	contract.TestProviderContract(t, pt, *addr)
+}
+
+type ProviderTester struct {
+	client pb.ShoppingCartClient
+	server pb.ShoppingCartServer
+}
+
+func (pt *ProviderTester) CallRpc(t *testing.T, interaction *contract.Interaction) *contract.EvalResult {
+	switch interaction.Method {
+	case "AddItem":
+		req := new(pb.AddItemRequest)
+		wantResp := new(pb.AddItemResponse)
+		interaction.Request.UnmarshalTo(req)
+		interaction.Response.UnmarshalTo(wantResp)
+		gotResp, rpcErr := pt.client.AddItem(context.Background(), req)
+		return &contract.EvalResult{
+			GotResponse:  gotResp,
+			WantResponse: wantResp,
+			RpcError:     rpcErr,
+			Err:          nil,
+		}
+	default:
+		return &contract.EvalResult{
+			GotResponse:  nil,
+			WantResponse: nil,
+			RpcError:     nil,
+			Err:          fmt.Errorf("unknown method %v", interaction.Method),
 		}
 	}
 }
 
+func (pt *ProviderTester) RegisterServer(s *grpc.Server) {
+	pb.RegisterShoppingCartServer(s, pt.server)
+}
+
+// A very simple server
 type ShoppingCartServer struct {
 	pb.UnimplementedShoppingCartServer
 }
@@ -66,18 +80,4 @@ func (s *ShoppingCartServer) AddItem(ctx context.Context, req *pb.AddItemRequest
 		}, nil
 	}
 	return nil, fmt.Errorf("Unkown item")
-}
-
-func startServer(t *testing.T) {
-	t.Helper()
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	s := grpc.NewServer()
-	pb.RegisterShoppingCartServer(s, &ShoppingCartServer{})
-	log.Printf("server listening at %v", lis.Addr())
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
 }
