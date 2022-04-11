@@ -19,7 +19,6 @@ var (
 )
 
 func TestProviderContract(t *testing.T) {
-
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -32,7 +31,7 @@ func TestProviderContract(t *testing.T) {
 		client: c,
 		server: &ShoppingCartServer{},
 	}
-	contract.TestProviderContract(t, pt, *addr)
+	contract.VerifyProviderContract(t, pt, *addr)
 }
 
 type ProviderTester struct {

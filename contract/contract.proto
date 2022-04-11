@@ -15,18 +15,20 @@ message Interaction {
     google.protobuf.Any  request = 2;
     google.protobuf.Any  response = 3;
     bool wantError = 4;
-    repeated IntCondition intConditions = 5;
-    repeated StringCondition stringConditions = 6;
+    repeated IntRule intRules = 5;
+    repeated StringRule stringRules = 6;
 }
 
-message IntCondition {
+message IntRule {
     string field = 1;
     int64 min = 2;
-    int64 max = 3;
-    repeated int64 allowed = 4;
+    bool checkMin = 3;
+    int64 max = 4;
+    bool chechMax = 5;
+    repeated int64 allowed = 6;
 }
 
-message StringCondition {
+message StringRule {
     string field = 1;
     string matchRegex = 2;
     repeated string allowed = 3;

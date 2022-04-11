@@ -1,9 +1,13 @@
 package contract
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
+	"reflect"
+	"regexp"
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -74,7 +78,7 @@ type RpcTester interface {
 	RegisterServer(*grpc.Server)
 }
 
-func TestProviderContract(t *testing.T, tester RpcTester, addr string) {
+func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
 	// Start the Shopping cart server as a separate goroutine.
 	go func() {
 		startServer(t, tester, addr)
@@ -94,6 +98,12 @@ func TestProviderContract(t *testing.T, tester RpcTester, addr string) {
 		if !proto.Equal(res.GotResponse, res.WantResponse) {
 			t.Errorf("response not conforming to contract")
 		}
+		for _, rule := range interaction.IntRules {
+			checkIntRule(res.GotResponse, rule)
+		}
+		for _, rule := range interaction.StringRules {
+			checkStringRule(res.GotResponse, rule)
+		}
 	}
 }
 
@@ -109,4 +119,70 @@ func startServer(t *testing.T, tester RpcTester, addr string) {
 	if err := server.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+}
+
+func fieldValue(m proto.Message, field string) (reflect.Value, error) {
+	v := reflect.ValueOf(m)
+	for _, name := range strings.Split(field, ".") {
+		if v.Kind() != reflect.Struct {
+			return reflect.Value{}, fmt.Errorf("invalid field expression %q for %v", field, m)
+		}
+		v = v.Elem().FieldByName(name)
+	}
+	return v, nil
+}
+
+func checkIntRule(m proto.Message, rule *IntRule) (bool, error) {
+	v, err := fieldValue(m, rule.Field)
+	if err != nil || !v.CanInt() {
+		return false, fmt.Errorf("error in parsing %q as Int: %v", rule.Field, err)
+	}
+	intVal := v.Int()
+	if rule.CheckMin && intVal < rule.Min {
+		return false, nil
+	}
+	if rule.ChechMax && intVal > rule.Max {
+		return false, nil
+	}
+	if len(rule.Allowed) > 0 && containsInt(rule.Allowed, intVal) {
+		return false, nil
+	}
+	return true, nil
+}
+
+func checkStringRule(m proto.Message, rule *StringRule) (bool, error) {
+	v, err := fieldValue(m, rule.Field)
+	if err != nil || v.Kind() != reflect.String {
+		return false, fmt.Errorf("error in parsing %q as string: %v", rule.Field, err)
+	}
+	stringVal := v.String()
+	if len(rule.Allowed) > 0 && containsString(rule.Allowed, stringVal) {
+		return false, nil
+	}
+	if rule.MatchRegex != "" {
+		regex, err := regexp.Compile(rule.MatchRegex)
+		if err != nil {
+			return false, fmt.Errorf("invalid regex %q defined at %v: %v", rule.MatchRegex, rule, err)
+		}
+		return regex.MatchString(stringVal), nil
+	}
+	return true, nil
+}
+
+func containsInt(arr []int64, target int64) bool {
+	for _, e := range arr {
+		if target == e {
+			return true
+		}
+	}
+	return false
+}
+
+func containsString(arr []string, target string) bool {
+	for _, e := range arr {
+		if target == e {
+			return true
+		}
+	}
+	return false
 }
