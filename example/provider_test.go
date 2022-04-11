@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -13,6 +14,11 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	pb "github.com/liux0047/grpc-contract-test/example/shoppingcart"
+)
+
+var (
+	port = flag.Int("port", 50051, "The server port")
+	addr = flag.String("addr", "localhost:50051", "the address to connect to")
 )
 
 func TestProviderContract(t *testing.T) {

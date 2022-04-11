@@ -1,31 +1,16 @@
 package contract
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/anypb"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 type Draft struct {
 	contract *Contract
-}
-
-func (stub *Draft) Respond(method string, req proto.Message) (proto.Message, error) {
-	for _, interaction := range stub.contract.Interactions {
-		fmt.Printf("interaction: %v; method equal: %v\n", interaction, interaction.Method == method)
-		fmt.Printf("proto diff: %v\n", cmp.Diff(req, interaction.Request, protocmp.Transform()))
-		if interaction.Method == method && proto.Equal(req, interaction.Request) {
-			return interaction.Response, nil
-		}
-	}
-	return nil, fmt.Errorf("no contract found for %q with request: %v", method, req)
 }
 
 func NewContract(service, consumer string) *Draft {
@@ -45,7 +30,6 @@ func (d *Draft) AddInteraction(method string, req proto.Message, response proto.
 	if err != nil {
 		return err
 	}
-
 	d.contract.Interactions = append(d.contract.Interactions, &Interaction{
 		Method:   method,
 		Request:  reqpb,
@@ -59,7 +43,7 @@ func (d *Draft) Commit() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(d.contract.Consumer+".textproto", content, 0)
+	return ioutil.WriteFile(d.contract.Consumer+".textproto", content, 0777)
 }
 
 // Reads the contract defined as a textproto file.
