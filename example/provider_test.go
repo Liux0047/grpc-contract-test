@@ -39,32 +39,32 @@ type ProviderTester struct {
 	server pb.ShoppingCartServer
 }
 
-func (pt *ProviderTester) CallRpc(t *testing.T, interaction *contract.Interaction) *contract.EvalResult {
+func (pt *ProviderTester) CallRpc(interaction *contract.Interaction) *contract.EvalResult {
 	switch interaction.Method {
 	case "AddItem":
 		req := new(pb.AddItemRequest)
-		wantResp := new(pb.AddItemResponse)
 		interaction.Request.UnmarshalTo(req)
-		interaction.Response.UnmarshalTo(wantResp)
 		gotResp, rpcErr := pt.client.AddItem(context.Background(), req)
 		return &contract.EvalResult{
-			GotResponse:  gotResp,
-			WantResponse: wantResp,
-			RpcError:     rpcErr,
-			Err:          nil,
+			Response: gotResp,
+			RpcError: rpcErr,
+			Err:      nil,
 		}
 	default:
 		return &contract.EvalResult{
-			GotResponse:  nil,
-			WantResponse: nil,
-			RpcError:     nil,
-			Err:          fmt.Errorf("unknown method %v", interaction.Method),
+			Response: nil,
+			RpcError: nil,
+			Err:      fmt.Errorf("unknown method %v", interaction.Method),
 		}
 	}
 }
 
 func (pt *ProviderTester) RegisterServer(s *grpc.Server) {
 	pb.RegisterShoppingCartServer(s, pt.server)
+}
+
+func (pt *ProviderTester) ContractUrl() string {
+	return "contract_repo/fooshop.textproto"
 }
 
 // A very simple server

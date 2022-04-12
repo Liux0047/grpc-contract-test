@@ -10,9 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -69,13 +71,14 @@ func ReadConctract(file string) (*Contract, error) {
 }
 
 type EvalResult struct {
-	GotResponse, WantResponse proto.Message
-	RpcError, Err             error
+	Response      proto.Message
+	RpcError, Err error
 }
 
 type RpcTester interface {
-	CallRpc(*testing.T, *Interaction) *EvalResult
+	CallRpc(*Interaction) *EvalResult
 	RegisterServer(*grpc.Server)
+	ContractUrl() string
 }
 
 func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
@@ -85,7 +88,8 @@ func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
 	}()
 
 	// Verify conformance to the contract for each interaction.
-	contract, err := ReadConctract("fooshop.textproto")
+	// TODO: read all files under URL
+	contract, err := ReadConctract(tester.ContractUrl())
 	if err != nil {
 		t.Fatalf("reading contract failed: %v", err)
 	}
@@ -94,15 +98,19 @@ func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
 			if err := setupPrecondition(t, interaction.Preconditions, contract.Interactions, tester); err != nil {
 				t.Fatalf("unable to setup precondition %v: %v", interaction.Preconditions, err)
 			}
-			res := tester.CallRpc(t, interaction)
+			res := tester.CallRpc(interaction)
 			if err != nil && !interaction.WantError {
 				t.Fatalf("unexpected error in calling %v with %v: %v", interaction.Method, interaction.Request, err)
 			}
-			if !proto.Equal(res.GotResponse, res.WantResponse) {
-				t.Errorf("response not conforming to contract")
+			gotResp, err := anypb.New(res.Response)
+			if err != nil {
+				t.Fatalf("unexpected error in marshalling response %v to anypb: %v", res.Response, err)
+			}
+			if diff := cmp.Diff(gotResp, interaction.Response, protocmp.Transform()); diff != "" {
+				t.Errorf("response not conforming to contract, diff: %v", diff)
 			}
 			if interaction.Rules != nil {
-				ruleMet, err := checkRules(res.GotResponse, interaction.Rules)
+				ruleMet, err := checkRules(res.Response, interaction.Rules)
 				if err != nil {
 					t.Fatalf("error in evaluating rules %v: %v", interaction.Rules, err)
 				}
@@ -120,7 +128,7 @@ func setupPrecondition(t *testing.T, preconditions []string, interactions []*Int
 		found := false
 		for _, interaction := range interactions {
 			if interaction.Name == precond {
-				tester.CallRpc(t, interaction)
+				tester.CallRpc(interaction)
 				found = true
 				break
 			}

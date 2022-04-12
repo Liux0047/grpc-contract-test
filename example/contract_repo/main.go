@@ -1,4 +1,4 @@
-package example
+package main
 
 import (
 	"github.com/liux0047/grpc-contract-test/contract"
