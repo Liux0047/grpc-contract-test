@@ -91,6 +91,9 @@ func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
 	}
 	for _, interaction := range contract.Interactions {
 		t.Run(interaction.Name, func(t *testing.T) {
+			if err := setupPrecondition(t, interaction.Preconditions, contract.Interactions, tester); err != nil {
+				t.Fatalf("unable to setup precondition %v: %v", interaction.Preconditions, err)
+			}
 			res := tester.CallRpc(t, interaction)
 			if err != nil && !interaction.WantError {
 				t.Fatalf("unexpected error in calling %v with %v: %v", interaction.Method, interaction.Request, err)
@@ -110,6 +113,23 @@ func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
 		})
 
 	}
+}
+
+func setupPrecondition(t *testing.T, preconditions []string, interactions []*Interaction, tester RpcTester) error {
+	for _, precond := range preconditions {
+		found := false
+		for _, interaction := range interactions {
+			if interaction.Name == precond {
+				tester.CallRpc(t, interaction)
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("precondition %q not found", precond)
+		}
+	}
+	return nil
 }
 
 func checkRules(response proto.Message, rules *CompositeRules) (bool, error) {

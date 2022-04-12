@@ -17,6 +17,7 @@ message Interaction {
     google.protobuf.Any  response = 4;
     bool wantError = 5;
     CompositeRules rules = 6;
+    repeated string preconditions = 7;
 }
 
 message CompositeRules {
