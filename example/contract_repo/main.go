@@ -8,7 +8,7 @@ import (
 func generateConsumerContract() {
 	draft := contract.NewContract("shoppingcart", "fooshop")
 	draft.AddInteraction("AddItem", &pb.AddItemRequest{ItemId: 1}, &pb.AddItemResponse{Added: true})
-	draft.Commit()
+	draft.Commit(false)
 }
 
 func main() {

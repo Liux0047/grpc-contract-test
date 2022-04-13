@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	reflect "reflect"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"

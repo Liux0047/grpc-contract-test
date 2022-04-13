@@ -1,8 +1,13 @@
 package contract
 
 import (
+	"context"
+	"fmt"
 	"io/ioutil"
+	"log"
 
+	firebase "firebase.google.com/go"
+	"google.golang.org/api/option"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -37,15 +42,35 @@ func (d *Draft) AddInteraction(method string, req proto.Message, response proto.
 	return nil
 }
 
-func (d *Draft) Commit() error {
+func (d *Draft) Commit(dryrun bool) error {
 	content, err := prototext.MarshalOptions{Multiline: true}.Marshal(d.contract)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(d.contract.Consumer+".textproto", content, 0777)
-}
-
-// TODO: save to Cloud
-func (d *Draft) CommitTo(url string) error {
+	if err := ioutil.WriteFile(d.contract.Consumer+".textproto", content, 0777); err != nil {
+		return err
+	}
+	if !dryrun {
+		ctx := context.Background()
+		ops := option.WithCredentialsFile("cred.json")
+		app, err := firebase.NewApp(ctx, &firebase.Config{
+			ProjectID: "grpc-contract-test",
+		}, ops)
+		if err != nil {
+			log.Fatalf("error initializing app: %v\n", err)
+		}
+		client, err := app.Firestore(ctx)
+		if err != nil {
+			return fmt.Errorf("error initializing app: %v", err)
+		}
+		if _, err := client.Collection("contracts").Doc(d.contract.Service).Set(ctx,
+			map[string]string{
+				d.contract.Consumer: string(content),
+			}); err != nil {
+			// Handle any errors in an appropriate way, such as returning them.
+			return fmt.Errorf("error has occurred while saving contract to Firestore: %v", err)
+		}
+		log.Printf("Contract successfully saved to Firestore for %v", d.contract.Consumer)
+	}
 	return nil
 }

@@ -1,15 +1,15 @@
-service: "shoppingcart"
-consumer: "fooshop"
-interactions: {
-  method: "AddItem"
-  request: {
-    [type.googleapis.com/shoppingcart.AddItemRequest]: {
-      item_id: 1
+service:  "shoppingcart"
+consumer:  "fooshop"
+interactions:  {
+  method:  "AddItem"
+  request:  {
+    [type.googleapis.com/shoppingcart.AddItemRequest]:  {
+      item_id:  1
     }
   }
-  response: {
-    [type.googleapis.com/shoppingcart.AddItemResponse]: {
-      added: true
+  response:  {
+    [type.googleapis.com/shoppingcart.AddItemResponse]:  {
+      added:  true
     }
   }
 }
