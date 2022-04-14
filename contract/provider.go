@@ -185,7 +185,7 @@ func checkIntRule(m proto.Message, rule *IntRule) (bool, error) {
 	if rule.CheckMin && intVal < rule.Min {
 		return false, nil
 	}
-	if rule.ChechMax && intVal > rule.Max {
+	if rule.CheckMax && intVal > rule.Max {
 		return false, nil
 	}
 	if len(rule.Allowed) > 0 && containsInt(rule.Allowed, intVal) {
@@ -203,7 +203,7 @@ func checkDoubleRule(m proto.Message, rule *DoubleRule) (bool, error) {
 	if rule.CheckMin && floatVal < rule.Min {
 		return false, nil
 	}
-	if rule.ChechMax && floatVal > rule.Max {
+	if rule.CheckMax && floatVal > rule.Max {
 		return false, nil
 	}
 	return true, nil

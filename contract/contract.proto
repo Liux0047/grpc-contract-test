@@ -37,7 +37,7 @@ message IntRule {
     int64 min = 2;
     bool checkMin = 3;
     int64 max = 4;
-    bool chechMax = 5;
+    bool checkMax = 5;
     repeated int64 allowed = 6;
 }
 
@@ -46,7 +46,7 @@ message DoubleRule {
     double min = 2;
     bool checkMin = 3;
     double max = 4;
-    bool chechMax = 5;
+    bool checkMax = 5;
 }
 
 message StringRule {

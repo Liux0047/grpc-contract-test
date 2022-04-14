@@ -1,0 +1,9 @@
+operator: AND
+nestedRules {
+    operator: OR
+    stringRules: [A, B]
+}
+nestedRules {
+    operator: OR
+    stringRules: [C, D]
+}
