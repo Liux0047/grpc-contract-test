@@ -115,6 +115,17 @@ func checkRules(response proto.Message, rules *CompositeRules) (bool, error) {
 			return true, nil
 		}
 	}
+	for _, rule := range rules.DoubleRules {
+		met, err := checkDoubleRule(response, rule)
+		if err != nil {
+			return false, err
+		}
+		if !met && rules.Operator == CompositeRules_AND {
+			return false, nil
+		} else if met && rules.Operator == CompositeRules_OR {
+			return true, nil
+		}
+	}
 	for _, rule := range rules.StringRules {
 		met, err := checkStringRule(response, rule)
 		if err != nil {
@@ -178,6 +189,21 @@ func checkIntRule(m proto.Message, rule *IntRule) (bool, error) {
 		return false, nil
 	}
 	if len(rule.Allowed) > 0 && containsInt(rule.Allowed, intVal) {
+		return false, nil
+	}
+	return true, nil
+}
+
+func checkDoubleRule(m proto.Message, rule *DoubleRule) (bool, error) {
+	v, err := fieldValue(m, rule.Field)
+	if err != nil || !v.CanFloat() {
+		return false, fmt.Errorf("error in parsing %q as float: %v", rule.Field, err)
+	}
+	floatVal := v.Float()
+	if rule.CheckMin && floatVal < rule.Min {
+		return false, nil
+	}
+	if rule.ChechMax && floatVal > rule.Max {
 		return false, nil
 	}
 	return true, nil

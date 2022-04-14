@@ -42,7 +42,7 @@ func (d *Draft) AddInteraction(method string, req proto.Message, response proto.
 	return nil
 }
 
-func (d *Draft) Commit(dryrun bool) error {
+func (d *Draft) Publish(dryrun bool) error {
 	content, err := prototext.MarshalOptions{Multiline: true}.Marshal(d.contract)
 	if err != nil {
 		return err

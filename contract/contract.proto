@@ -28,7 +28,8 @@ message CompositeRules {
     Operator operator = 1;
     repeated IntRule intRules = 2;
     repeated StringRule stringRules = 3;
-    repeated CompositeRules nestedRules = 4;
+    repeated DoubleRule doubleRules = 4;
+    repeated CompositeRules nestedRules = 5;
 }
 
 message IntRule {
@@ -38,6 +39,14 @@ message IntRule {
     int64 max = 4;
     bool chechMax = 5;
     repeated int64 allowed = 6;
+}
+
+message DoubleRule {
+    string field = 1;
+    double min = 2;
+    bool checkMin = 3;
+    double max = 4;
+    bool chechMax = 5;
 }
 
 message StringRule {
