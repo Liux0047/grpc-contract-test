@@ -103,15 +103,15 @@ func setupPrecondition(t *testing.T, preconditions []string, interactions []*Int
 	return nil
 }
 
-func checkRules(response proto.Message, rules *CompositeRules) (bool, error) {
+func checkRules(response proto.Message, rules *CompositeRule) (bool, error) {
 	for _, rule := range rules.IntRules {
 		met, err := checkIntRule(response, rule)
 		if err != nil {
 			return false, err
 		}
-		if !met && rules.Operator == CompositeRules_AND {
+		if !met && rules.Operator == CompositeRule_AND {
 			return false, nil
-		} else if met && rules.Operator == CompositeRules_OR {
+		} else if met && rules.Operator == CompositeRule_OR {
 			return true, nil
 		}
 	}
@@ -120,9 +120,9 @@ func checkRules(response proto.Message, rules *CompositeRules) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if !met && rules.Operator == CompositeRules_AND {
+		if !met && rules.Operator == CompositeRule_AND {
 			return false, nil
-		} else if met && rules.Operator == CompositeRules_OR {
+		} else if met && rules.Operator == CompositeRule_OR {
 			return true, nil
 		}
 	}
@@ -131,9 +131,9 @@ func checkRules(response proto.Message, rules *CompositeRules) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if !met && rules.Operator == CompositeRules_AND {
+		if !met && rules.Operator == CompositeRule_AND {
 			return false, nil
-		} else if met && rules.Operator == CompositeRules_OR {
+		} else if met && rules.Operator == CompositeRule_OR {
 			return true, nil
 		}
 	}
@@ -142,13 +142,13 @@ func checkRules(response proto.Message, rules *CompositeRules) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if !met && rules.Operator == CompositeRules_AND {
+		if !met && rules.Operator == CompositeRule_AND {
 			return false, nil
-		} else if met && rules.Operator == CompositeRules_OR {
+		} else if met && rules.Operator == CompositeRule_OR {
 			return true, nil
 		}
 	}
-	return rules.Operator == CompositeRules_AND, nil
+	return rules.Operator == CompositeRule_AND, nil
 }
 
 func startServer(t *testing.T, tester RpcTester, addr string) {

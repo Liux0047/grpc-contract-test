@@ -16,11 +16,11 @@ message Interaction {
     google.protobuf.Any  request = 3;
     google.protobuf.Any  response = 4;
     bool wantError = 5;
-    CompositeRules rules = 6;
+    CompositeRule rules = 6;
     repeated string preconditions = 7;
 }
 
-message CompositeRules {
+message CompositeRule {
     enum Operator {
         AND = 0;
         OR = 1;
@@ -29,7 +29,7 @@ message CompositeRules {
     repeated IntRule intRules = 2;
     repeated StringRule stringRules = 3;
     repeated DoubleRule doubleRules = 4;
-    repeated CompositeRules nestedRules = 5;
+    repeated CompositeRule nestedRules = 5;
 }
 
 message IntRule {
