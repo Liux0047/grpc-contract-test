@@ -25,11 +25,11 @@ func TestProviderContract(t *testing.T) {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewShoppingCartClient(conn)
+	client := pb.NewShoppingCartClient(conn)
 
 	pt := &ProviderTester{
-		client: c,
-		server: &ShoppingCartServer{},
+		client: client,
+		server: NewServer(),
 	}
 	contract.VerifyProviderContract(t, pt, *addr)
 }
@@ -37,6 +37,10 @@ func TestProviderContract(t *testing.T) {
 type ProviderTester struct {
 	client pb.ShoppingCartClient
 	server pb.ShoppingCartServer
+}
+
+func (pt *ProviderTester) Client() interface{} {
+	return pt.client
 }
 
 func (pt *ProviderTester) CallRpc(interaction *contract.Interaction) *contract.EvalResult {
@@ -70,6 +74,10 @@ func (pt *ProviderTester) ContractUrl() string {
 // A very simple server
 type ShoppingCartServer struct {
 	pb.UnimplementedShoppingCartServer
+}
+
+func NewServer() *ShoppingCartServer {
+	return &ShoppingCartServer{}
 }
 
 func (s *ShoppingCartServer) AddItem(ctx context.Context, req *pb.AddItemRequest) (*pb.AddItemResponse, error) {

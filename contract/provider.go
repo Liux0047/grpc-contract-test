@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -37,6 +38,7 @@ type RpcTester interface {
 	CallRpc(*Interaction) *EvalResult // Invokes the rpc given the interation.
 	RegisterServer(*grpc.Server)      // Register the server implementation.
 	ContractUrl() string
+	Client() interface{}
 }
 
 type EvalResult struct { // The result of invoking the rpc.
@@ -61,7 +63,7 @@ func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
 			if err := setupPrecondition(t, interaction.Preconditions, contract.Interactions, tester); err != nil {
 				t.Fatalf("unable to setup precondition %v: %v", interaction.Preconditions, err)
 			}
-			res := tester.CallRpc(interaction)
+			res := callRpc(interaction, tester.Client())
 			if err != nil && !interaction.WantError {
 				t.Fatalf("unexpected error in calling %v with %v: %v", interaction.Method, interaction.Request, err)
 			}
@@ -83,6 +85,35 @@ func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
 			}
 		})
 
+	}
+}
+
+func callRpc(interaction *Interaction, client interface{}) *EvalResult {
+	method := reflect.ValueOf(client).MethodByName(interaction.Method)
+	if method == (reflect.Value{}) {
+		return &EvalResult{
+			Response: nil,
+			RpcError: nil,
+			Err:      fmt.Errorf("unknown method %v", interaction.Method),
+		}
+	}
+	// Obtain a zero value for the rpc method's 2nd parameter, the request message.
+	// The var req has the correct type needed to invoke the rpc from the client.
+	req := reflect.New(method.Type().In(1).Elem()).Interface()
+	// Unmarshal the request specified in the contract to this new typed request.
+	interaction.Request.UnmarshalTo(req.(proto.Message))
+	ctx := reflect.ValueOf(context.Background())
+	result := method.Call([]reflect.Value{ctx, reflect.ValueOf(req)})
+	// Convert the rpc error response if not nil.
+	errResult := result[1].Interface()
+	var rpcError error
+	if errResult != nil {
+		rpcError = errResult.(error)
+	}
+	return &EvalResult{
+		Response: result[0].Interface().(proto.Message),
+		RpcError: rpcError,
+		Err:      nil,
 	}
 }
 
