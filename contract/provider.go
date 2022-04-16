@@ -2,6 +2,7 @@ package contract
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,10 +14,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	anypb "google.golang.org/protobuf/types/known/anypb"
+)
+
+var (
+	addr = flag.String("addr", "localhost:50051", "the address to connect to")
 )
 
 // Reads the contract defined as a textproto file.
@@ -35,10 +41,8 @@ func ReadConctract(file string) (*Contract, error) {
 }
 
 type RpcTester interface {
-	CallRpc(*Interaction) *EvalResult // Invokes the rpc given the interation.
-	RegisterServer(*grpc.Server)      // Register the server implementation.
-	ContractUrl() string
-	Client() interface{}
+	RegisterServer(*grpc.Server)                 // Register the server implementation.
+	RegisterClient(*grpc.ClientConn) interface{} // Register and returns the gRPC client.
 }
 
 type EvalResult struct { // The result of invoking the rpc.
@@ -46,15 +50,23 @@ type EvalResult struct { // The result of invoking the rpc.
 	RpcError, Err error         // Errors in replaying the rpc.
 }
 
-func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
+func VerifyProviderContract(t *testing.T, tester RpcTester) {
 	// Start the Shopping cart server as a separate goroutine.
 	go func() {
-		startServer(t, tester, addr)
+		startServer(t, tester, *addr)
 	}()
+
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	client := tester.RegisterClient(conn)
 
 	// Verify conformance to the contract for each interaction.
 	// TODO: read all files under URL
-	contract, err := ReadConctract(tester.ContractUrl())
+	contract, err := ReadConctract("contract_repo/fooshop.textproto")
 	if err != nil {
 		t.Fatalf("reading contract failed: %v", err)
 	}
@@ -63,7 +75,7 @@ func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {
 			if err := setupPrecondition(t, interaction.Preconditions, contract.Interactions, tester); err != nil {
 				t.Fatalf("unable to setup precondition %v: %v", interaction.Preconditions, err)
 			}
-			res := callRpc(interaction, tester.Client())
+			res := callRpc(interaction, client)
 			if err != nil && !interaction.WantError {
 				t.Fatalf("unexpected error in calling %v with %v: %v", interaction.Method, interaction.Request, err)
 			}
@@ -117,12 +129,12 @@ func callRpc(interaction *Interaction, client interface{}) *EvalResult {
 	}
 }
 
-func setupPrecondition(t *testing.T, preconditions []string, interactions []*Interaction, tester RpcTester) error {
+func setupPrecondition(t *testing.T, preconditions []string, interactions []*Interaction, client interface{}) error {
 	for _, precond := range preconditions {
 		found := false
 		for _, interaction := range interactions {
 			if interaction.Name == precond {
-				tester.CallRpc(interaction)
+				callRpc(interaction, client)
 				found = true
 				break
 			}
