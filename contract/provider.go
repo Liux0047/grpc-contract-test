@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/prototext"
@@ -83,7 +84,8 @@ func VerifyProviderContract(t *testing.T, tester RpcTester) {
 			if err != nil {
 				t.Fatalf("unexpected error in marshalling response %v to anypb: %v", res.Response, err)
 			}
-			if diff := cmp.Diff(gotResp, interaction.Response, protocmp.Transform()); diff != "" {
+			opts := append(findFieldsWithRules(interaction.Rules), protocmp.Transform())
+			if diff := cmp.Diff(gotResp, interaction.Response, opts...); diff != "" {
 				t.Errorf("response not conforming to contract, diff: %v", diff)
 			}
 			if interaction.Rules != nil {
@@ -98,6 +100,23 @@ func VerifyProviderContract(t *testing.T, tester RpcTester) {
 		})
 
 	}
+}
+
+func findFieldsWithRules(rules *CompositeRule) []cmp.Option {
+	var opts []cmp.Option
+	for _, rule := range rules.IntRules {
+		opts = append(opts, cmpopts.IgnoreFields(new(int64), rule.Field))
+	}
+	for _, rule := range rules.DoubleRules {
+		opts = append(opts, cmpopts.IgnoreFields(new(float64), rule.Field))
+	}
+	for _, rule := range rules.StringRules {
+		opts = append(opts, cmpopts.IgnoreFields("", rule.Field))
+	}
+	for _, rule := range rules.NestedRules {
+		opts = append(opts, findFieldsWithRules(rule)...)
+	}
+	return opts
 }
 
 func callRpc(interaction *Interaction, client interface{}) *EvalResult {
