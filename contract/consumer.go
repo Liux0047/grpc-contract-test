@@ -14,7 +14,7 @@ import (
 )
 
 type Draft struct {
-	contract *Contract
+	contract *Contract // the reference to the contract under draft.
 }
 
 func NewContract(service, consumer string) *Draft {
@@ -25,19 +25,27 @@ func NewContract(service, consumer string) *Draft {
 	}}
 }
 
-func (d *Draft) AddInteraction(method string, req proto.Message, response proto.Message) error {
+func (d *Draft) AddInteraction(
+	name, method string, req proto.Message, response proto.Message,
+	wantError bool, rules *CompositeRule, preconditions []string) error {
+	// cast request message into *anypb.Any.
 	reqpb, err := anypb.New(req)
 	if err != nil {
 		return err
 	}
+	// cast expected response message into *anypb.Any.
 	responsepb, err := anypb.New(response)
 	if err != nil {
 		return err
 	}
 	d.contract.Interactions = append(d.contract.Interactions, &Interaction{
-		Method:   method,
-		Request:  reqpb,
-		Response: responsepb,
+		Name:          name,
+		Method:        method,
+		Request:       reqpb,
+		Response:      responsepb,
+		WantError:     wantError,
+		Rules:         rules,
+		Preconditions: preconditions,
 	})
 	return nil
 }

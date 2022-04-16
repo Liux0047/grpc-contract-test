@@ -7,8 +7,12 @@ import (
 
 func generateConsumerContract() {
 	draft := contract.NewContract("shoppingcart", "fooshop")
-	draft.AddInteraction("AddItem", &pb.AddItemRequest{ItemId: 1}, &pb.AddItemResponse{Added: true})
-	draft.AddInteraction("AddItem2", &pb.AddItemRequest{ItemId: 1}, &pb.AddItemResponse{Added: true})
+	draft.AddInteraction(
+		"Add item to cart",
+		"AddItem",
+		&pb.AddItemRequest{ItemId: 1},
+		&pb.AddItemResponse{Added: true},
+		false, nil, nil)
 	draft.Publish(false)
 }
 

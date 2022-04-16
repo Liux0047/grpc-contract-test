@@ -33,15 +33,15 @@ func ReadConctract(file string) (*Contract, error) {
 	return contract, nil
 }
 
-type EvalResult struct {
-	Response      proto.Message
-	RpcError, Err error
+type RpcTester interface {
+	CallRpc(*Interaction) *EvalResult // Invokes the rpc given the interation.
+	RegisterServer(*grpc.Server)      // Register the server implementation.
+	ContractUrl() string
 }
 
-type RpcTester interface {
-	CallRpc(*Interaction) *EvalResult
-	RegisterServer(*grpc.Server)
-	ContractUrl() string
+type EvalResult struct { // The result of invoking the rpc.
+	Response      proto.Message // The actual response received.
+	RpcError, Err error         // Errors in replaying the rpc.
 }
 
 func VerifyProviderContract(t *testing.T, tester RpcTester, addr string) {

@@ -1,6 +1,7 @@
 service:  "shoppingcart"
 consumer:  "fooshop"
 interactions:  {
+  name:  "Add item to cart"
   method:  "AddItem"
   request:  {
     [type.googleapis.com/shoppingcart.AddItemRequest]:  {
