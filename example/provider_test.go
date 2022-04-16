@@ -12,16 +12,16 @@ import (
 )
 
 func TestProviderContract(t *testing.T) {
-	contract.VerifyProviderContract(t, new(ProviderTester))
+	contract.VerifyProviderContract(t, new(ShoppingCartTester))
 }
 
-type ProviderTester struct{}
+type ShoppingCartTester struct{}
 
-func (pt *ProviderTester) RegisterClient(conn *grpc.ClientConn) interface{} {
+func (pt *ShoppingCartTester) RegisterClient(conn *grpc.ClientConn) interface{} {
 	return pb.NewShoppingCartClient(conn)
 }
 
-func (pt *ProviderTester) RegisterServer(s *grpc.Server) {
+func (pt *ShoppingCartTester) RegisterServer(s *grpc.Server) {
 	pb.RegisterShoppingCartServer(s, NewServer())
 }
 

@@ -41,8 +41,8 @@ func ReadConctract(file string) (*Contract, error) {
 }
 
 type RpcTester interface {
-	RegisterServer(*grpc.Server)                 // Register the server implementation.
-	RegisterClient(*grpc.ClientConn) interface{} // Register and returns the gRPC client.
+	RegisterServer(*grpc.Server)                 // Register the gRPC server.
+	RegisterClient(*grpc.ClientConn) interface{} // Register the gRPC client.
 }
 
 type EvalResult struct { // The result of invoking the rpc.
@@ -109,18 +109,19 @@ func callRpc(interaction *Interaction, client interface{}) *EvalResult {
 			Err:      fmt.Errorf("unknown method %v", interaction.Method),
 		}
 	}
-	// Obtain a zero value for the rpc method's 2nd parameter, the request message.
+	// Obtain a zero value for the rpc method's 2nd parameter, the request.
 	// The var req has the correct type needed to invoke the rpc from the client.
 	req := reflect.New(method.Type().In(1).Elem()).Interface()
 	// Unmarshal the request specified in the contract to this new typed request.
 	interaction.Request.UnmarshalTo(req.(proto.Message))
+	// Invokes the rpc method with default context and provided request.
 	ctx := reflect.ValueOf(context.Background())
 	result := method.Call([]reflect.Value{ctx, reflect.ValueOf(req)})
 	// Convert the rpc error response if not nil.
-	errResult := result[1].Interface()
+	errResponse := result[1].Interface()
 	var rpcError error
-	if errResult != nil {
-		rpcError = errResult.(error)
+	if errResponse != nil {
+		rpcError = errResponse.(error)
 	}
 	return &EvalResult{
 		Response: result[0].Interface().(proto.Message),
