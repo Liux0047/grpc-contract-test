@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 
 	firebase "firebase.google.com/go"
 	"google.golang.org/api/option"
@@ -50,12 +52,22 @@ func (d *Draft) AddInteraction(
 	return nil
 }
 
-func (d *Draft) Publish(dryrun bool) error {
+func (d *Draft) PublishLocal(path string) error {
 	content, err := prototext.MarshalOptions{Multiline: true}.Marshal(d.contract)
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(d.contract.Consumer+".textproto", content, 0777); err != nil {
+	os.MkdirAll(path, os.ModePerm)
+	fName := filepath.Join(path, fmt.Sprintf("%s.prototxt", d.contract.Consumer))
+	if err := ioutil.WriteFile(fName, content, os.ModePerm); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Draft) Publish(dryrun bool) error {
+	content, err := prototext.MarshalOptions{Multiline: true}.Marshal(d.contract)
+	if err != nil {
 		return err
 	}
 	if !dryrun {

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/liux0047/grpc-contract-test/contract"
 	pb "github.com/liux0047/grpc-contract-test/example/shoppingcart"
 )
@@ -13,7 +15,9 @@ func generateConsumerContract() {
 		&pb.AddItemRequest{ItemId: 1},
 		&pb.AddItemResponse{Added: true},
 		false, nil, nil)
-	draft.Publish(false)
+	if err := draft.PublishLocal("server"); err != nil {
+		log.Fatalf("Error in publishing to local: %v", err)
+	}
 }
 
 func main() {
