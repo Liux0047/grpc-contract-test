@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -66,44 +67,55 @@ func VerifyProviderContract(t *testing.T, tester RpcTester) {
 	client := tester.RegisterClient(conn)
 
 	// Verify conformance to the contract for each interaction.
-	// TODO: read all files under URL
-	contract, err := ReadConctract("contract_repo/fooshop.textproto")
+	dir := "contract_repo/server"
+	files, err := ioutil.ReadDir(dir)
+	// contract, err := ReadConctract("contract_repo/fooshop.textproto")
 	if err != nil {
-		t.Fatalf("reading contract failed: %v", err)
+		t.Fatalf("reading contract in directory %s failed: %v", dir, err)
 	}
-	for _, interaction := range contract.Interactions {
-		t.Run(interaction.Name, func(t *testing.T) {
-			if err := setupPrecondition(t, interaction.Preconditions, contract.Interactions, tester); err != nil {
-				t.Fatalf("unable to setup precondition %v: %v", interaction.Preconditions, err)
-			}
-			res := callRpc(interaction, client)
-			if err != nil && !interaction.WantError {
-				t.Fatalf("unexpected error in calling %v with %v: %v", interaction.Method, interaction.Request, err)
-			}
-			gotResp, err := anypb.New(res.Response)
+	for _, file := range files {
+		t.Run(file.Name(), func(t *testing.T) {
+			fileName := filepath.Join(dir, file.Name())
+			contract, err := ReadConctract(fileName)
 			if err != nil {
-				t.Fatalf("unexpected error in marshalling response %v to anypb: %v", res.Response, err)
+				t.Fatalf("error reading contract %s: %v", fileName, err)
 			}
-			opts := append(findFieldsWithRules(interaction.Rules), protocmp.Transform())
-			if diff := cmp.Diff(gotResp, interaction.Response, opts...); diff != "" {
-				t.Errorf("response not conforming to contract, diff: %v", diff)
-			}
-			if interaction.Rules != nil {
-				ruleMet, err := checkRules(res.Response, interaction.Rules)
+			for _, interaction := range contract.Interactions {
+				if err := setupPrecondition(t, interaction.Preconditions, contract.Interactions, tester); err != nil {
+					t.Fatalf("unable to setup precondition %v: %v", interaction.Preconditions, err)
+				}
+				res := callRpc(interaction, client)
+				if err != nil && !interaction.WantError {
+					t.Fatalf("unexpected error in calling %v with %v: %v", interaction.Method, interaction.Request, err)
+				}
+				gotResp, err := anypb.New(res.Response)
 				if err != nil {
-					t.Fatalf("error in evaluating rules %v: %v", interaction.Rules, err)
+					t.Fatalf("unexpected error in marshalling response %v to anypb: %v", res.Response, err)
 				}
-				if !ruleMet {
-					t.Errorf("rules are not met for %v", interaction.Rules)
+				opts := append(findFieldsWithRules(interaction.Rules), protocmp.Transform())
+				if diff := cmp.Diff(gotResp, interaction.Response, opts...); diff != "" {
+					t.Errorf("response not conforming to contract, diff: %v", diff)
 				}
+				if interaction.Rules != nil {
+					ruleMet, err := checkRules(res.Response, interaction.Rules)
+					if err != nil {
+						t.Fatalf("error in evaluating rules %v: %v", interaction.Rules, err)
+					}
+					if !ruleMet {
+						t.Errorf("rules are not met for %v", interaction.Rules)
+					}
+				}
+
 			}
 		})
-
 	}
 }
 
 func findFieldsWithRules(rules *CompositeRule) []cmp.Option {
 	var opts []cmp.Option
+	if rules == nil {
+		return opts
+	}
 	for _, rule := range rules.IntRules {
 		opts = append(opts, cmpopts.IgnoreFields(new(int64), rule.Field))
 	}

@@ -11,11 +11,11 @@ func generateConsumerContract() {
 	draft := contract.NewContract("shoppingcart", "fooshop")
 	draft.AddInteraction(
 		"Add item to cart",
-		"AddItem",
+		"AddItem2",
 		&pb.AddItemRequest{ItemId: 1},
 		&pb.AddItemResponse{Added: true},
 		false, nil, nil)
-	if err := draft.PublishLocal("server"); err != nil {
+	if err := draft.PublishRemote(false); err != nil {
 		log.Fatalf("Error in publishing to local: %v", err)
 	}
 }

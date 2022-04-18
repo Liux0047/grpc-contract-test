@@ -7,8 +7,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
+	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
+	"github.com/google/uuid"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
@@ -65,32 +68,37 @@ func (d *Draft) PublishLocal(path string) error {
 	return nil
 }
 
-func (d *Draft) Publish(dryrun bool) error {
+func (d *Draft) PublishRemote(dryrun bool) error {
 	content, err := prototext.MarshalOptions{Multiline: true}.Marshal(d.contract)
 	if err != nil {
 		return err
 	}
-	if !dryrun {
-		ctx := context.Background()
-		ops := option.WithCredentialsFile("cred.json")
-		app, err := firebase.NewApp(ctx, &firebase.Config{
-			ProjectID: "grpc-contract-test",
-		}, ops)
-		if err != nil {
-			log.Fatalf("error initializing app: %v\n", err)
-		}
-		client, err := app.Firestore(ctx)
-		if err != nil {
-			return fmt.Errorf("error initializing app: %v", err)
-		}
-		if _, err := client.Collection("contracts").Doc(d.contract.Service).Set(ctx,
-			map[string]string{
-				d.contract.Consumer: string(content),
-			}); err != nil {
-			// Handle any errors in an appropriate way, such as returning them.
-			return fmt.Errorf("error has occurred while saving contract to Firestore: %v", err)
-		}
-		log.Printf("Contract successfully saved to Firestore for %v", d.contract.Consumer)
+	if dryrun {
+		log.Printf("The prototxt to be published is: %v", string(content))
+		return nil
 	}
+	ctx := context.Background()
+	ops := option.WithCredentialsFile("cred.json")
+	app, err := firebase.NewApp(ctx, &firebase.Config{
+		ProjectID: "grpc-contract-test",
+	}, ops)
+	if err != nil {
+		log.Fatalf("error initializing app: %v\n", err)
+	}
+	client, err := app.Firestore(ctx)
+	if err != nil {
+		return fmt.Errorf("error initializing app: %v", err)
+	}
+	version := fmt.Sprintf("%s_%s", time.Now().Format("2006-01-02"), uuid.New().String())
+	doc := client.Collection("services").Doc(d.contract.Service).Collection("consumers").Doc(d.contract.Consumer)
+	if _, err := doc.Set(ctx,
+		map[string]string{
+			"latest": version,
+			version:  string(content),
+		}, firestore.MergeAll); err != nil {
+		// Handle any errors in an appropriate way, such as returning them.
+		return fmt.Errorf("error has occurred while saving contract to Firestore: %v", err)
+	}
+	log.Printf("Contract successfully saved to Firestore for %v", d.contract.Consumer)
 	return nil
 }
