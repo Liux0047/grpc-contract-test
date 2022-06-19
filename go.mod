@@ -3,7 +3,7 @@ module github.com/liux0047/grpc-contract-test
 go 1.18
 
 require (
-	cloud.google.com/go/firestore v1.6.1 // indirect
+	cloud.google.com/go/firestore v1.6.1
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/google/go-cmp v0.5.7
 	google.golang.org/grpc v1.45.0

@@ -69,7 +69,6 @@ func VerifyProviderContract(t *testing.T, tester RpcTester) {
 	// Verify conformance to the contract for each interaction.
 	dir := "contract_repo/server"
 	files, err := ioutil.ReadDir(dir)
-	// contract, err := ReadConctract("contract_repo/fooshop.textproto")
 	if err != nil {
 		t.Fatalf("reading contract in directory %s failed: %v", dir, err)
 	}
@@ -133,7 +132,7 @@ func findFieldsWithRules(rules *CompositeRule) []cmp.Option {
 
 func callRpc(interaction *Interaction, client interface{}) *EvalResult {
 	method := reflect.ValueOf(client).MethodByName(interaction.Method)
-	if method == (reflect.Value{}) {
+	if method == (reflect.Value{}) { // method not found.
 		return &EvalResult{
 			Response: nil,
 			RpcError: nil,

@@ -11,8 +11,8 @@ func generateConsumerContract() {
 	draft := contract.NewContract("shoppingcart", "fooshop")
 	draft.AddInteraction(
 		"Add item to cart",
-		"AddItem2",
-		&pb.AddItemRequest{ItemId: 1},
+		"AddItem",
+		&pb.AddItemRequest{ItemId: 2},
 		&pb.AddItemResponse{Added: true},
 		false, nil, nil)
 	if err := draft.PublishRemote(false); err != nil {

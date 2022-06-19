@@ -2,17 +2,20 @@ package contract
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
 	"github.com/google/uuid"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -101,4 +104,50 @@ func (d *Draft) PublishRemote(dryrun bool) error {
 	}
 	log.Printf("Contract successfully saved to Firestore for %v", d.contract.Consumer)
 	return nil
+}
+
+// Obtains a connection to the contract as server.
+func NewContractConn(path string) (grpc.ClientConnInterface, error) {
+	contract, err := ReadConctract(path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read the contract: %w", err)
+	}
+	return &ContractConn{contract}, nil
+}
+
+type ContractConn struct {
+	contract *Contract
+}
+
+func (c *ContractConn) Invoke(ctx context.Context, method string,
+	req interface{}, resp interface{}, opts ...grpc.CallOption) error {
+	// method is formatted as "/pkgName.ServiceName/MethodName".
+	methodName := method[strings.LastIndex(method, "/")+1:]
+	// Pack the req into Anypb for equality test with interaction.Request.
+	reqpb, err := anypb.New(req.(proto.Message))
+	if err != nil {
+		return fmt.Errorf("unable to convert req %v into Anypb: %w", req, err)
+	}
+	for _, interaction := range c.contract.Interactions {
+		if interaction.Method == methodName &&
+			proto.Equal(reqpb, interaction.Request) {
+			if interaction.WantError {
+				return errors.New("expected error from contract")
+			}
+			err := interaction.Response.UnmarshalTo(resp.(proto.Message))
+			if err != nil {
+				return fmt.Errorf("unable to unmarshall response %v: %w",
+					interaction.Response, err)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("interaction not found for method %q and req %v",
+		methodName, req)
+}
+
+func (c *ContractConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string,
+	opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	// Unimplemented.
+	return nil, nil
 }

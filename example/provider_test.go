@@ -37,8 +37,24 @@ func NewServer() *ShoppingCartServer {
 func (s *ShoppingCartServer) AddItem(ctx context.Context, req *pb.AddItemRequest) (*pb.AddItemResponse, error) {
 	if req.ItemId == 1 {
 		return &pb.AddItemResponse{
-			Added: true,
+			Added: false,
 		}, nil
 	}
 	return nil, fmt.Errorf("Unkown item")
+}
+
+func TestConsumerAsServer(t *testing.T) {
+	conn, err := contract.NewContractConn("contract_repo/server/fooshop.prototxt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := pb.NewShoppingCartClient(conn)
+	ctx := context.Background()
+	resp, err := client.AddItem(ctx, &pb.AddItemRequest{ItemId: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !resp.Added {
+		t.Errorf("Want Added to be true, got %v", resp.Added)
+	}
 }
