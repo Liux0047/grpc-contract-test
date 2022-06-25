@@ -11,17 +11,16 @@ service ContractService {
     // Runs the provider verfication tests.
     rpc VerificationTest(VerificationTestRequest) returns (VerificationTestResponse) {}
 }
-
 message VerificationTestRequest {
     repeated Contract contracts = 1;
 }
 
 message VerificationTestResponse {
     bool passed = 1;
-    repeated TestFailure failed = 2;
+    repeated Violation violations = 2;
 }
 
-message TestFailure {
+message Violation {
     string interaction = 1;
     string failure_msg = 2;
 }
