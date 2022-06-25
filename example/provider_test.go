@@ -37,7 +37,7 @@ func NewServer() *ShoppingCartServer {
 func (s *ShoppingCartServer) AddItem(ctx context.Context, req *pb.AddItemRequest) (*pb.AddItemResponse, error) {
 	if req.ItemId == 1 {
 		return &pb.AddItemResponse{
-			Added: false,
+			Added: true,
 		}, nil
 	}
 	return nil, fmt.Errorf("Unkown item")
