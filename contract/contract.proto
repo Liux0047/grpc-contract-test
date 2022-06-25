@@ -26,7 +26,7 @@ message Violation {
 }
 
 message PublishContractRequest {
-    Contract contracts = 1;
+    Contract contract = 1;
 }
 
 message PublishContractResponse {
