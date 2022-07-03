@@ -14,126 +14,176 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// ContractServiceClient is the client API for ContractService service.
+// ServiceConsumerClient is the client API for ServiceConsumer service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ContractServiceClient interface {
+type ServiceConsumerClient interface {
 	// Publish a contract for the consumer to the repository.
 	PublishContract(ctx context.Context, in *PublishContractRequest, opts ...grpc.CallOption) (*PublishContractResponse, error)
-	// Runs the provider verfication tests.
-	VerificationTest(ctx context.Context, in *VerificationTestRequest, opts ...grpc.CallOption) (*VerificationTestResponse, error)
 }
 
-type contractServiceClient struct {
+type serviceConsumerClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewContractServiceClient(cc grpc.ClientConnInterface) ContractServiceClient {
-	return &contractServiceClient{cc}
+func NewServiceConsumerClient(cc grpc.ClientConnInterface) ServiceConsumerClient {
+	return &serviceConsumerClient{cc}
 }
 
-func (c *contractServiceClient) PublishContract(ctx context.Context, in *PublishContractRequest, opts ...grpc.CallOption) (*PublishContractResponse, error) {
+func (c *serviceConsumerClient) PublishContract(ctx context.Context, in *PublishContractRequest, opts ...grpc.CallOption) (*PublishContractResponse, error) {
 	out := new(PublishContractResponse)
-	err := c.cc.Invoke(ctx, "/contract.ContractService/PublishContract", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/contract.ServiceConsumer/PublishContract", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *contractServiceClient) VerificationTest(ctx context.Context, in *VerificationTestRequest, opts ...grpc.CallOption) (*VerificationTestResponse, error) {
-	out := new(VerificationTestResponse)
-	err := c.cc.Invoke(ctx, "/contract.ContractService/VerificationTest", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ContractServiceServer is the server API for ContractService service.
-// All implementations must embed UnimplementedContractServiceServer
+// ServiceConsumerServer is the server API for ServiceConsumer service.
+// All implementations must embed UnimplementedServiceConsumerServer
 // for forward compatibility
-type ContractServiceServer interface {
+type ServiceConsumerServer interface {
 	// Publish a contract for the consumer to the repository.
 	PublishContract(context.Context, *PublishContractRequest) (*PublishContractResponse, error)
-	// Runs the provider verfication tests.
-	VerificationTest(context.Context, *VerificationTestRequest) (*VerificationTestResponse, error)
-	mustEmbedUnimplementedContractServiceServer()
+	mustEmbedUnimplementedServiceConsumerServer()
 }
 
-// UnimplementedContractServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedContractServiceServer struct {
+// UnimplementedServiceConsumerServer must be embedded to have forward compatible implementations.
+type UnimplementedServiceConsumerServer struct {
 }
 
-func (UnimplementedContractServiceServer) PublishContract(context.Context, *PublishContractRequest) (*PublishContractResponse, error) {
+func (UnimplementedServiceConsumerServer) PublishContract(context.Context, *PublishContractRequest) (*PublishContractResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishContract not implemented")
 }
-func (UnimplementedContractServiceServer) VerificationTest(context.Context, *VerificationTestRequest) (*VerificationTestResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method VerificationTest not implemented")
-}
-func (UnimplementedContractServiceServer) mustEmbedUnimplementedContractServiceServer() {}
+func (UnimplementedServiceConsumerServer) mustEmbedUnimplementedServiceConsumerServer() {}
 
-// UnsafeContractServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ContractServiceServer will
+// UnsafeServiceConsumerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ServiceConsumerServer will
 // result in compilation errors.
-type UnsafeContractServiceServer interface {
-	mustEmbedUnimplementedContractServiceServer()
+type UnsafeServiceConsumerServer interface {
+	mustEmbedUnimplementedServiceConsumerServer()
 }
 
-func RegisterContractServiceServer(s grpc.ServiceRegistrar, srv ContractServiceServer) {
-	s.RegisterService(&ContractService_ServiceDesc, srv)
+func RegisterServiceConsumerServer(s grpc.ServiceRegistrar, srv ServiceConsumerServer) {
+	s.RegisterService(&ServiceConsumer_ServiceDesc, srv)
 }
 
-func _ContractService_PublishContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ServiceConsumer_PublishContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PublishContractRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ContractServiceServer).PublishContract(ctx, in)
+		return srv.(ServiceConsumerServer).PublishContract(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/contract.ContractService/PublishContract",
+		FullMethod: "/contract.ServiceConsumer/PublishContract",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ContractServiceServer).PublishContract(ctx, req.(*PublishContractRequest))
+		return srv.(ServiceConsumerServer).PublishContract(ctx, req.(*PublishContractRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ContractService_VerificationTest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+// ServiceConsumer_ServiceDesc is the grpc.ServiceDesc for ServiceConsumer service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ServiceConsumer_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "contract.ServiceConsumer",
+	HandlerType: (*ServiceConsumerServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "PublishContract",
+			Handler:    _ServiceConsumer_PublishContract_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "contract/contract.proto",
+}
+
+// ServiceProviderClient is the client API for ServiceProvider service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ServiceProviderClient interface {
+	// Runs the provider verfication tests.
+	VerificationTest(ctx context.Context, in *VerificationTestRequest, opts ...grpc.CallOption) (*VerificationTestResponse, error)
+}
+
+type serviceProviderClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewServiceProviderClient(cc grpc.ClientConnInterface) ServiceProviderClient {
+	return &serviceProviderClient{cc}
+}
+
+func (c *serviceProviderClient) VerificationTest(ctx context.Context, in *VerificationTestRequest, opts ...grpc.CallOption) (*VerificationTestResponse, error) {
+	out := new(VerificationTestResponse)
+	err := c.cc.Invoke(ctx, "/contract.ServiceProvider/VerificationTest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ServiceProviderServer is the server API for ServiceProvider service.
+// All implementations must embed UnimplementedServiceProviderServer
+// for forward compatibility
+type ServiceProviderServer interface {
+	// Runs the provider verfication tests.
+	VerificationTest(context.Context, *VerificationTestRequest) (*VerificationTestResponse, error)
+	mustEmbedUnimplementedServiceProviderServer()
+}
+
+// UnimplementedServiceProviderServer must be embedded to have forward compatible implementations.
+type UnimplementedServiceProviderServer struct {
+}
+
+func (UnimplementedServiceProviderServer) VerificationTest(context.Context, *VerificationTestRequest) (*VerificationTestResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerificationTest not implemented")
+}
+func (UnimplementedServiceProviderServer) mustEmbedUnimplementedServiceProviderServer() {}
+
+// UnsafeServiceProviderServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ServiceProviderServer will
+// result in compilation errors.
+type UnsafeServiceProviderServer interface {
+	mustEmbedUnimplementedServiceProviderServer()
+}
+
+func RegisterServiceProviderServer(s grpc.ServiceRegistrar, srv ServiceProviderServer) {
+	s.RegisterService(&ServiceProvider_ServiceDesc, srv)
+}
+
+func _ServiceProvider_VerificationTest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(VerificationTestRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ContractServiceServer).VerificationTest(ctx, in)
+		return srv.(ServiceProviderServer).VerificationTest(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/contract.ContractService/VerificationTest",
+		FullMethod: "/contract.ServiceProvider/VerificationTest",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ContractServiceServer).VerificationTest(ctx, req.(*VerificationTestRequest))
+		return srv.(ServiceProviderServer).VerificationTest(ctx, req.(*VerificationTestRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ContractService_ServiceDesc is the grpc.ServiceDesc for ContractService service.
+// ServiceProvider_ServiceDesc is the grpc.ServiceDesc for ServiceProvider service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ContractService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "contract.ContractService",
-	HandlerType: (*ContractServiceServer)(nil),
+var ServiceProvider_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "contract.ServiceProvider",
+	HandlerType: (*ServiceProviderServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "PublishContract",
-			Handler:    _ContractService_PublishContract_Handler,
-		},
-		{
 			MethodName: "VerificationTest",
-			Handler:    _ContractService_VerificationTest_Handler,
+			Handler:    _ServiceProvider_VerificationTest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

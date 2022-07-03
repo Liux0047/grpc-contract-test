@@ -4,13 +4,27 @@ package contract;
 option go_package = "github.com/liux0047/grpc-contract-test/contract";
 import "google/protobuf/any.proto";
 
-// Service definitions for running contract tests.
-service ContractService {
+service ServiceConsumer {
     // Publish a contract for the consumer to the repository.
-    rpc PublishContract(PublishContractRequest) returns (PublishContractResponse) {}
-    // Runs the provider verfication tests.
-    rpc VerificationTest(VerificationTestRequest) returns (VerificationTestResponse) {}
+    rpc PublishContract(PublishContractRequest) 
+    returns (PublishContractResponse) {}
 }
+
+message PublishContractRequest {
+    Contract contract = 1;
+}
+
+message PublishContractResponse {
+    bool status = 1;
+    string error_msg = 2;
+}
+
+service ServiceProvider {
+    // Runs the provider verfication tests.
+    rpc VerificationTest(VerificationTestRequest) 
+    returns (VerificationTestResponse) {}
+}
+
 message VerificationTestRequest {
     repeated Contract contracts = 1;
 }
@@ -23,15 +37,6 @@ message VerificationTestResponse {
 message Violation {
     string interaction = 1;
     string failure_msg = 2;
-}
-
-message PublishContractRequest {
-    Contract contract = 1;
-}
-
-message PublishContractResponse {
-    bool status = 1;
-    string error_msg = 2;
 }
 
 message Contract {
