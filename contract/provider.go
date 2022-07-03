@@ -52,10 +52,10 @@ type EvalResult struct { // The result of invoking the rpc.
 	RpcError, Err error         // Errors in replaying the rpc.
 }
 
-func VerifyProviderContract(t *testing.T, tester RpcTester) {
+func TestProviderContract(t *testing.T, tester RpcTester) {
 	// Start the Shopping cart server as a separate goroutine.
 	go func() {
-		startServer(t, tester, *addr)
+		startTestServer(t, tester, *addr)
 	}()
 
 	// Set up a connection to the server.
@@ -80,7 +80,7 @@ func VerifyProviderContract(t *testing.T, tester RpcTester) {
 				t.Fatalf("error reading contract %s: %v", fileName, err)
 			}
 			for _, interaction := range contract.Interactions {
-				if err := setupPrecondition(t, interaction.Preconditions, contract.Interactions, tester); err != nil {
+				if err := setupPrecondition(interaction.Preconditions, contract.Interactions, tester); err != nil {
 					t.Fatalf("unable to setup precondition %v: %v", interaction.Preconditions, err)
 				}
 				res := callRpc(interaction, client)
@@ -91,7 +91,7 @@ func VerifyProviderContract(t *testing.T, tester RpcTester) {
 				if err != nil {
 					t.Fatalf("unexpected error in marshalling response %v to anypb: %v", res.Response, err)
 				}
-				opts := append(findFieldsWithRules(interaction.Rules), protocmp.Transform())
+				opts := append(ignoreFieldsWithRules(interaction.Rules), protocmp.Transform())
 				if diff := cmp.Diff(gotResp, interaction.Response, opts...); diff != "" {
 					t.Errorf("response not conforming to contract, diff: %v", diff)
 				}
@@ -110,7 +110,7 @@ func VerifyProviderContract(t *testing.T, tester RpcTester) {
 	}
 }
 
-func findFieldsWithRules(rules *CompositeRule) []cmp.Option {
+func ignoreFieldsWithRules(rules *CompositeRule) []cmp.Option {
 	var opts []cmp.Option
 	if rules == nil {
 		return opts
@@ -125,7 +125,7 @@ func findFieldsWithRules(rules *CompositeRule) []cmp.Option {
 		opts = append(opts, cmpopts.IgnoreFields("", rule.Field))
 	}
 	for _, rule := range rules.NestedRules {
-		opts = append(opts, findFieldsWithRules(rule)...)
+		opts = append(opts, ignoreFieldsWithRules(rule)...)
 	}
 	return opts
 }
@@ -160,7 +160,7 @@ func callRpc(interaction *Interaction, client interface{}) *EvalResult {
 	}
 }
 
-func setupPrecondition(t *testing.T, preconditions []string, interactions []*Interaction, client interface{}) error {
+func setupPrecondition(preconditions []string, interactions []*Interaction, client interface{}) error {
 	for _, precond := range preconditions {
 		found := false
 		for _, interaction := range interactions {
@@ -225,7 +225,7 @@ func checkRules(response proto.Message, rules *CompositeRule) (bool, error) {
 	return rules.Operator == CompositeRule_AND, nil
 }
 
-func startServer(t *testing.T, tester RpcTester, addr string) {
+func startTestServer(t *testing.T, tester RpcTester, addr string) {
 	t.Helper()
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {

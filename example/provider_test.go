@@ -12,7 +12,7 @@ import (
 )
 
 func TestProviderContract(t *testing.T) {
-	contract.VerifyProviderContract(t, new(ShoppingCartTester))
+	contract.TestProviderContract(t, new(ShoppingCartTester))
 }
 
 type ShoppingCartTester struct{}
